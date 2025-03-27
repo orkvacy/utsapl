@@ -1,67 +1,23 @@
 import pandas as pd
 import os
 from prettytable import PrettyTable
-
+from termcolor import colored
 data_file = "dataSales.csv"
 
-# Fungsi untuk membersihkan layar terminal
-def clear_screen():
-    # Untuk Windows
-    if os.name == 'nt':
-        os.system('cls')
-    # Untuk Unix/Linux/MacOS
-    else:
-        os.system('clear')
+def clear(): #buat clear terminal
+    os.system('cls || clear')
 
-# Fungsi untuk membaca data dari CSV
-def read_data():
+
+def readData():
     if os.path.exists(data_file):
         return pd.read_csv(data_file)
     return pd.DataFrame(columns=["ID", "Nama", "Tanggal", "Total Terjual", "Jumlah Barang Terjual"])
 
-# Fungsi untuk menyimpan data ke CSV
-def save_data(df):
+
+def saveDF(df):
     df.to_csv(data_file, index=False)
 
-# Fungsi Merge Sort
-def merge_sort(df, column, ascending=True):
-    if len(df) <= 1:
-        return df
-    mid = len(df) // 2
-    left = merge_sort(df.iloc[:mid], column, ascending)
-    right = merge_sort(df.iloc[mid:], column, ascending)
-    return merge(left, right, column, ascending)
-
-def merge(left, right, column, ascending):
-    result = pd.DataFrame(columns=left.columns)
-    i = j = 0
-    while i < len(left) and j < len(right):
-        if (left.iloc[i][column] <= right.iloc[j][column]) if ascending else (left.iloc[i][column] >= right.iloc[j][column]):
-            result = pd.concat([result, left.iloc[i:i+1]])
-            i += 1
-        else:
-            result = pd.concat([result, right.iloc[j:j+1]])
-            j += 1
-    result = pd.concat([result, left.iloc[i:]])
-    result = pd.concat([result, right.iloc[j:]])
-    return result
-
-# Fungsi Binary Search
-def binary_search(df, column, value):
-    df_sorted = merge_sort(df, column, ascending=True)
-    low, high = 0, len(df_sorted) - 1
-    while low <= high:
-        mid = (low + high) // 2
-        if df_sorted.iloc[mid][column] == value:
-            return df_sorted.iloc[mid]
-        elif df_sorted.iloc[mid][column] < value:
-            low = mid + 1
-        else:
-            high = mid - 1
-    return None
-
-# Fungsi untuk menampilkan data dengan PrettyTable
-def display_data(df):
+def dis(df):
     if df.empty:
         print("Tidak ada data sales.")
         return
@@ -80,170 +36,352 @@ def display_data(df):
     
     print(table)
 
-# Fungsi CRUD
-def add_data():
-    clear_screen()
-    df = read_data()
-    new_id = input("Masukkan ID Sales: ")
-    nama = input("Masukkan Nama Sales: ")
-    tanggal = input("Masukkan Tanggal (YYYY-MM-DD): ")
-    total = float(input("Masukkan Total Terjual (Rp): "))
-    jumlah_barang = int(input("Masukkan Jumlah Barang Terjual: "))
+def add():
+    clear()
+    df = readData()
     
-    new_row = pd.DataFrame({
-        "ID": [new_id], 
+    while True:
+        idBaru = input("Masukkan ID Sales: ").strip()
+        if not idBaru:
+            print("ID Sales tidak boleh kosong!")
+            continue
+        
+        if idBaru in df['ID'].values:
+            print("ID Sales sudah ada. Silakan masukkan ID yang berbeda.")
+            continue
+        
+        break
+    
+    while True:
+        nama = input("Masukkan Nama Sales: ").strip()
+        if not nama:
+            print("Nama Sales tidak boleh kosong!")
+            continue
+        break
+    
+    while True:
+        tanggal = input("Masukkan Tanggal (YYYY-MM-DD): ").strip()
+        try:
+            pd.to_datetime(tanggal)
+            break
+        except ValueError:
+            print("Format tanggal salah. Gunakan format YYYY-MM-DD.")
+    
+    while True:
+        try:
+            total = float(input("Masukkan Total Terjual (Rp): "))
+            if total < 0:
+                print("Total terjual tidak boleh negatif!")
+                continue
+            break
+        except ValueError:
+            print("Masukkan angka yang valid!")
+    
+    while True:
+        try:
+            jumlahBarang = int(input("Masukkan Jumlah Barang Terjual: "))
+            if jumlahBarang < 0:
+                print("Jumlah barang tidak boleh negatif!")
+                continue
+            break
+        except ValueError:
+            print("Masukkan angka bulat yang valid!")
+    
+    dataBaru = pd.DataFrame({
+        "ID": [idBaru], 
         "Nama": [nama], 
         "Tanggal": [tanggal], 
         "Total Terjual": [total], 
-        "Jumlah Barang Terjual": [jumlah_barang]
+        "Jumlah Barang Terjual": [jumlahBarang]
     })
     
-    df = pd.concat([df, new_row], ignore_index=True)
-    save_data(df)
+    df = pd.concat([df, dataBaru], ignore_index=True)
+    saveDF(df)
+    
+    clear()
     print("Data berhasil ditambahkan!")
     input("\nTekan Enter untuk melanjutkan...")
-    clear_screen()
+    clear()
 
-def view_data():
-    clear_screen()
-    df = read_data()
+def tabel():
+    clear()
+    df = readData()
     if df.empty:
         print("Tidak ada data sales.")
         input("\nTekan Enter untuk melanjutkan...")
         return
     
     print("Data Sales:")
-    display_data(df)
+    dis(df)
     
     print("\nPilih Sortir:")
     print("1. Tanggal")
     print("2. Total Terjual")
     print("3. ID Sales")
     print("4. Jumlah Barang Terjual")
+    print("0. Kembali")
+    
     choice = input("Pilihan: ")
-    ascending = input("Ascending (Y/N)?: ").lower() == 'y'
     
-    columns = {"1": "Tanggal", "2": "Total Terjual", "3": "ID", "4": "Jumlah Barang Terjual"}
-    if choice in columns:
-        df = merge_sort(df, columns[choice], ascending)
-        clear_screen()
-        print(f"Data diurutkan berdasarkan {columns[choice]} {'(Ascending)' if ascending else '(Descending)'}:")
-        display_data(df)
-    
-    input("\nTekan Enter untuk melanjutkan...")
-    clear_screen()
-
-def update_data():
-    clear_screen()
-    df = read_data()
-    id_sales = input("Masukkan ID Sales yang ingin diubah: ")
-    if id_sales not in df["ID"].values:
-        print("ID tidak ditemukan!")
-        input("\nTekan Enter untuk melanjutkan...")
-        clear_screen()
+    if choice == "0":
         return
     
-    index = df[df["ID"] == id_sales].index[0]
-    nama = input("Masukkan Nama Sales baru (kosong untuk tidak mengubah): ")
-    tanggal = input("Masukkan Tanggal baru (kosong untuk tidak mengubah): ")
-    total = input("Masukkan Total Terjual baru (kosong untuk tidak mengubah): ")
-    jumlah_barang = input("Masukkan Jumlah Barang Terjual baru (kosong untuk tidak mengubah): ")
+    kolomDF = {
+        "1": "Tanggal", 
+        "2": "Total Terjual", 
+        "3": "ID", 
+        "4": "Jumlah Barang Terjual"
+    }
     
+    if choice not in kolomDF:
+        print("Pilihan tidak valid!")
+        input("\nTekan Enter untuk melanjutkan...")
+        clear()
+        return
+    
+    while True:
+        ascending_input = input("Urutkan Ascending? (Y/N): ").lower()
+        if ascending_input in ['y', 'n']:
+            ascending = ascending_input == 'y'
+            break
+        else:
+            print("Masukan tidak valid. Silakan ketik Y atau N.")
+    
+    sortingDF = kolomDF[choice]
+    
+    if sortingDF in ["Total Terjual", "Jumlah Barang Terjual"]:
+        df[sortingDF] = pd.to_numeric(df[sortingDF], errors='coerce')
+    
+    sortDF = df.sort_values(by=sortingDF, ascending=ascending)
+    
+    clear()
+    print(f"Data diurutkan berdasarkan {sortingDF} {'(Ascending)' if ascending else '(Descending)'}:")
+    dis(sortDF)
+    
+    input("\nTekan Enter untuk melanjutkan...")
+    clear()
+
+def update():
+    clear()
+    df = readData()
+    
+    dis(df)
+    
+    idSales = input("Masukkan ID Sales yang ingin diubah: ").strip()
+    
+    cariData = df[df["ID"] == idSales]
+    
+    if cariData.empty:
+        print("ID tidak ditemukan!")
+        input("\nTekan Enter untuk melanjutkan...")
+        clear()
+        return
+    
+    index = cariData.index[0]
+    
+    print("\nData Saat Ini:")
+    dis(cariData)
+    
+    print("\nKosongkan input jika tidak ingin mengubah")
+    
+    nama = input(f"Nama Sales baru (sekarang: {df.at[index, 'Nama']}): ").strip()
     if nama:
         df.at[index, "Nama"] = nama
-    if tanggal:
-        df.at[index, "Tanggal"] = tanggal
-    if total:
-        df.at[index, "Total Terjual"] = float(total)
-    if jumlah_barang:
-        df.at[index, "Jumlah Barang Terjual"] = int(jumlah_barang)
     
-    save_data(df)
+    while True:
+        tanggal = input(f"Tanggal baru (sekarang: {df.at[index, 'Tanggal']}): ").strip()
+        if not tanggal:
+            break
+        try:
+            pd.to_datetime(tanggal)
+            df.at[index, "Tanggal"] = tanggal
+            break
+        except ValueError:
+            print("Format tanggal salah. Gunakan format YYYY-MM-DD.")
+    
+    while True:
+        total = input(f"Total Terjual baru (sekarang: Rp {df.at[index, 'Total Terjual']:,.2f}): ").strip()
+        if not total:
+            break
+        try:
+            totalTerjual = float(total)
+            if totalTerjual < 0:
+                print("Total terjual harus lebih dari 0!")
+                continue
+            df.at[index, "Total Terjual"] = totalTerjual
+            break
+        except ValueError:
+            print("Masukkan angka yang valid!")
+    
+    while True:
+        jumlahBarang = input(f"Jumlah Barang Terjual baru (sekarang: {df.at[index, 'Jumlah Barang Terjual']}): ").strip()
+        if not jumlahBarang:
+            break
+        try:
+            jumlahBarang_int = int(jumlahBarang)
+            if jumlahBarang_int < 0:
+                print("Jumlah barang tidak boleh negatif!")
+                continue
+            df.at[index, "Jumlah Barang Terjual"] = jumlahBarang_int
+            break
+        except ValueError:
+            print("Masukkan angka bulat yang valid!")
+    
+    saveDF(df)
+    
+    clear()
     print("Data berhasil diperbarui!")
     input("\nTekan Enter untuk melanjutkan...")
-    clear_screen()
+    clear()
 
-def delete_data():
-    clear_screen()
-    df = read_data()
-    id_sales = input("Masukkan ID Sales yang ingin dihapus: ")
-    if id_sales not in df["ID"].values:
+def hapus():
+    clear()
+    df = readData()
+    dis(df)
+    
+    idSales = input("Masukkan ID Sales yang ingin dihapus: ").strip()
+    
+    cariData = df[df["ID"] == idSales]
+    
+    if cariData.empty:
         print("ID tidak ditemukan!")
         input("\nTekan Enter untuk melanjutkan...")
-        clear_screen()
+        clear()
         return
     
-    df = df[df["ID"] != id_sales]
-    save_data(df)
-    print("Data berhasil dihapus!")
+    konfirmasi = input(f"Anda yakin ingin menghapus data sales dengan ID {idSales}? (Y/N): ").lower()
+    
+    if konfirmasi == 'y':
+        df = df[df["ID"] != idSales]
+        saveDF(df)
+        
+        clear()
+        print("Data berhasil dihapus!")
+    else:
+        clear()
+        print("Penghapusan dibatalkan.")
+    
     input("\nTekan Enter untuk melanjutkan...")
-    clear_screen()
+    clear()
 
-def search_data():
-    clear_screen()
-    df = read_data()
+def find():
+    clear()
+    df = readData()
+    
     print("Cari berdasarkan:")
     print("1. ID Sales")
     print("2. Nama Sales")
+    print("3. Rentang Tanggal")
+    print("4. Rentang Total Terjual")
+    print("0. Kembali")
+    
     choice = input("Pilihan: ")
     
+    if choice == "0":
+        return
+    
     if choice == "1":
-        id_sales = input("Masukkan ID Sales: ")
-        result = binary_search(df, "ID", id_sales)
-        if result is not None:
-            result_df = pd.DataFrame([result])
-            clear_screen()
-            print("Data ditemukan:")
-            display_data(result_df)
-        else:
-            print("Data tidak ditemukan!")
+        idSales = input("Masukkan ID Sales: ").strip()
+        result = df[df["ID"] == idSales]
+    
     elif choice == "2":
-        nama = input("Masukkan Nama Sales: ")
+        nama = input("Masukkan Nama Sales: ").strip()
         result = df[df["Nama"].str.contains(nama, case=False, na=False)]
-        clear_screen()
-        if not result.empty:
-            print(f"Hasil pencarian untuk nama: {nama}")
-            display_data(result)
-        else:
-            print("Data tidak ditemukan!")
+    
+    elif choice == "3":
+        try:
+            tanggalMulai = input("Masukkan tanggal awal (YYYY-MM-DD): ").strip()
+            tanggalAkhir = input("Masukkan tanggal akhir (YYYY-MM-DD): ").strip()
+            
+            tanggalMulai = pd.to_datetime(tanggalMulai)
+            tanggalAkhir = pd.to_datetime(tanggalAkhir)
+            
+            df['Tanggal'] = pd.to_datetime(df['Tanggal'])
+            result = df[(df['Tanggal'] >= tanggalMulai) & (df['Tanggal'] <= tanggalAkhir)]
+        except ValueError:
+            print("Format tanggal salah!")
+            input("\nTekan Enter untuk melanjutkan...")
+            clear()
+            return
+    
+    elif choice == "4":
+        try:
+            minTotal = float(input("Masukkan total minimum: "))
+            maxTotal = float(input("Masukkan total maksimum: "))
+            
+            result = df[(df['Total Terjual'] >= minTotal) & (df['Total Terjual'] <= maxTotal)]
+        except ValueError:
+            print("Masukkan angka yang valid!")
+            input("\nTekan Enter untuk melanjutkan...")
+            clear()
+            return
+    
     else:
         print("Pilihan tidak valid!")
+        input("\nTekan Enter untuk melanjutkan...")
+        clear()
+        return
+    
+    clear()
+    if result.empty:
+        print("Tidak ada data yang ditemukan.")
+    else:
+        print("Hasil Pencarian:")
+        dis(result)
     
     input("\nTekan Enter untuk melanjutkan...")
-    clear_screen()
+    clear()
 
 def main():
-    clear_screen()
+    clear()
     while True:
-        print("\nAplikasi Manajemen Data Sales")
-        print("==============================")
-        print("1. Lihat Data")
-        print("2. Tambah Data")
-        print("3. Ubah Data")
-        print("4. Hapus Data")
-        print("5. Cari Data")
-        print("0. Keluar")
+        menu_table = PrettyTable()
+        menu_table.field_names = [colored("APLIKASI MANAJEMEN DATA SALES", "white")]
+        menu_table.align[menu_table.field_names[0]] = 'c'
+        menu_table.header = True
+        menu_table.border = True
+        menu_table.hrules = 1  
         
-        choice = input("Pilihan: ")
+        menu_table.horizontal_char = colored('─', 'yellow')
+        menu_table.vertical_char = colored('│', 'yellow')
+        menu_table.junction_char = colored('┼', 'yellow')
+
+        # Format menu items dengan lebar yang konsisten
+        menu_items = [
+            colored("1. [📋] Lihat Data", "light_cyan").ljust(25),
+            colored("2. [➕] Tambah Data", "light_cyan").ljust(25), 
+            colored("3. [✏️] Ubah Data", "light_cyan").ljust(25),
+            colored("4. [🗑️] Hapus Data", "light_cyan").ljust(25), 
+            colored("5. [🔍] Cari Data", "light_cyan").ljust(25),
+            colored("0. [❌] Keluar", "light_red").ljust(25)
+        ]
+
+        for item in menu_items:
+            menu_table.add_row([item])
+
+        print("\n" + str(menu_table) + "\n")
+        
+        choice = input("Pilihan: ").strip()
         
         if choice == "1":
-            view_data()
+            tabel()
         elif choice == "2":
-            add_data()
+            add()
         elif choice == "3":
-            update_data()
+            update()
         elif choice == "4":
-            delete_data()
+            hapus()
         elif choice == "5":
-            search_data()
+            find()
         elif choice == "0":
             print("Terima kasih telah menggunakan aplikasi!")
             break
         else:
-            clear_screen()
+            clear()
             print("Pilihan tidak valid!")
             input("\nTekan Enter untuk melanjutkan...")
-            clear_screen()
+            clear()
 
 if __name__ == "__main__":
     main()
+
