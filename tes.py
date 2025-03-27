@@ -346,7 +346,6 @@ def main():
         menu_table.vertical_char = colored('│', 'yellow')
         menu_table.junction_char = colored('┼', 'yellow')
 
-        # Format menu items dengan lebar yang konsisten
         menu_items = [
             colored("1. [📋] Lihat Data", "light_cyan").ljust(25),
             colored("2. [➕] Tambah Data", "light_cyan").ljust(25), 
