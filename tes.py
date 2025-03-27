@@ -52,7 +52,8 @@ def binarySearch(arr, target, key='ID'):
 
     while left <= right:
         mid = (left + right) // 2
-        mid_value = arr[mid][key]
+        mid_value = str(arr[mid][key])
+        target_value = str(target)
 
         if mid_value == target:
             return mid
