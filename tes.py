@@ -5,6 +5,64 @@ from termcolor import colored
 
 data_file = "dataSales.csv"
 
+def mergeSort(arr, key='ID', ascending=True):
+    if len(arr) <= 1:
+        return arr
+
+    mid = len(arr) // 2
+    left = arr[:mid]
+    right = arr[mid:]
+
+    left = mergeSort(left, key, ascending)
+    right = mergeSort(right, key, ascending)
+
+    return merge(left, right, key, ascending)
+
+def merge(left, right, key, ascending):
+    result = []
+    i = j = 0
+
+    while i < len(left) and j < len(right):
+        if key == 'Tanggal':
+            left_val = pd.Timestamp(left[i][key])
+            right_val = pd.Timestamp(right[j][key])
+        else:
+            left_val = left[i][key]
+            right_val = right[j][key]
+        
+        if ascending:
+            comparison = left_val <= right_val
+        else:
+            comparison = left_val >= right_val
+        
+        if comparison:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+
+    result.extend(left[i:])
+    result.extend(right[j:])
+
+    return result
+
+def binarySearch(arr, target, key='ID'):
+    left, right = 0, len(arr) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+        mid_value = arr[mid][key]
+
+        if mid_value == target:
+            return mid
+        elif mid_value < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1  
+
 def clear(): 
     os.system('cls || clear')
 
@@ -49,7 +107,10 @@ def add():
             print("ID Sales tidak boleh kosong!")
             continue
         
-        if idBaru in df['ID'].values:
+        df_list = df.to_dict('records')
+        sorted_df = mergeSort(df_list, key='ID')
+        
+        if binarySearch(sorted_df, idBaru) != -1:
             print("ID Sales sudah ada. Silakan masukkan ID yang berbeda.")
             continue
         
@@ -65,7 +126,6 @@ def add():
     while True:
         tanggal = input("Masukkan Tanggal (YYYY-MM-DD): ").strip()
         try:
-            # Tambahkan validasi format tanggal yang lebih ketat
             pd.to_datetime(tanggal, format='%Y-%m-%d')
             break
         except ValueError:
@@ -153,10 +213,10 @@ def tabel():
     
     sortingDF = kolomDF[choice]
     
-    if sortingDF == "Tanggal":
-        sortDF = df.sort_values(by=sortingDF, ascending=ascending)
-    else:
-        sortDF = df.sort_values(by=sortingDF, ascending=ascending)
+    df_list = df.to_dict('records')
+    sorted_list = mergeSort(df_list, key=sortingDF, ascending=ascending)
+    
+    sortDF = pd.DataFrame(sorted_list)
     
     clear()
     print(f"Data diurutkan berdasarkan {sortingDF} {'(Ascending)' if ascending else '(Descending)'}:")
@@ -173,18 +233,21 @@ def update():
     
     idSales = input("Masukkan ID Sales yang ingin diubah: ").strip()
     
-    cariData = df[df["ID"] == idSales]
+    df_list = df.to_dict('records')
+    sorted_df = mergeSort(df_list, key='ID')
     
-    if cariData.empty:
+    index_result = binarySearch(sorted_df, idSales)
+    
+    if index_result == -1:
         print("ID tidak ditemukan!")
         input("\nTekan Enter untuk melanjutkan...")
         clear()
         return
     
-    index = cariData.index[0]
+    index = df[df['ID'] == idSales].index[0]
     
     print("\nData Saat Ini:")
-    dis(cariData)
+    dis(df.loc[df['ID'] == idSales])
     
     print("\nKosongkan input jika tidak ingin mengubah")
     
@@ -244,9 +307,12 @@ def hapus():
     
     idSales = input("Masukkan ID Sales yang ingin dihapus: ").strip()
     
-    cariData = df[df["ID"] == idSales]
+    df_list = df.to_dict('records')
+    sorted_df = mergeSort(df_list, key='ID')
     
-    if cariData.empty:
+    index_result = binarySearch(sorted_df, idSales)
+    
+    if index_result == -1:
         print("ID tidak ditemukan!")
         input("\nTekan Enter untuk melanjutkan...")
         clear()
@@ -285,7 +351,13 @@ def find():
     
     if choice == "1":
         idSales = input("Masukkan ID Sales: ").strip()
-        result = df[df["ID"] == idSales]
+        
+        df_list = df.to_dict('records')
+        sorted_df = mergeSort(df_list, key='ID')
+        
+        index_result = binarySearch(sorted_df, idSales)
+        
+        result = df[df["ID"] == idSales] if index_result != -1 else pd.DataFrame()
     
     elif choice == "2":
         nama = input("Masukkan Nama Sales: ").strip()
