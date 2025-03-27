@@ -2,20 +2,23 @@ import pandas as pd
 import os
 from prettytable import PrettyTable
 from termcolor import colored
+
 data_file = "dataSales.csv"
 
-def clear(): #buat clear terminal
+def clear(): 
     os.system('cls || clear')
-
 
 def readData():
     if os.path.exists(data_file):
-        return pd.read_csv(data_file)
+        df = pd.read_csv(data_file)
+        df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='%Y-%m-%d')
+        return df
     return pd.DataFrame(columns=["ID", "Nama", "Tanggal", "Total Terjual", "Jumlah Barang Terjual"])
 
-
 def saveDF(df):
-    df.to_csv(data_file, index=False)
+    df_save = df.copy()
+    df_save['Tanggal'] = df_save['Tanggal'].dt.strftime('%Y-%m-%d')
+    df_save.to_csv(data_file, index=False)
 
 def dis(df):
     if df.empty:
@@ -29,7 +32,7 @@ def dis(df):
         table.add_row([
             row['ID'], 
             row['Nama'], 
-            row['Tanggal'], 
+            row['Tanggal'].strftime('%Y-%m-%d'), 
             f"Rp {row['Total Terjual']:,.2f}", 
             row['Jumlah Barang Terjual']
         ])
@@ -62,7 +65,8 @@ def add():
     while True:
         tanggal = input("Masukkan Tanggal (YYYY-MM-DD): ").strip()
         try:
-            pd.to_datetime(tanggal)
+            # Tambahkan validasi format tanggal yang lebih ketat
+            pd.to_datetime(tanggal, format='%Y-%m-%d')
             break
         except ValueError:
             print("Format tanggal salah. Gunakan format YYYY-MM-DD.")
@@ -90,7 +94,7 @@ def add():
     dataBaru = pd.DataFrame({
         "ID": [idBaru], 
         "Nama": [nama], 
-        "Tanggal": [tanggal], 
+        "Tanggal": [pd.to_datetime(tanggal)], 
         "Total Terjual": [total], 
         "Jumlah Barang Terjual": [jumlahBarang]
     })
@@ -149,10 +153,10 @@ def tabel():
     
     sortingDF = kolomDF[choice]
     
-    if sortingDF in ["Total Terjual", "Jumlah Barang Terjual"]:
-        df[sortingDF] = pd.to_numeric(df[sortingDF], errors='coerce')
-    
-    sortDF = df.sort_values(by=sortingDF, ascending=ascending)
+    if sortingDF == "Tanggal":
+        sortDF = df.sort_values(by=sortingDF, ascending=ascending)
+    else:
+        sortDF = df.sort_values(by=sortingDF, ascending=ascending)
     
     clear()
     print(f"Data diurutkan berdasarkan {sortingDF} {'(Ascending)' if ascending else '(Descending)'}:")
@@ -189,12 +193,11 @@ def update():
         df.at[index, "Nama"] = nama
     
     while True:
-        tanggal = input(f"Tanggal baru (sekarang: {df.at[index, 'Tanggal']}): ").strip()
+        tanggal = input(f"Tanggal baru (sekarang: {df.at[index, 'Tanggal'].strftime('%Y-%m-%d')}): ").strip()
         if not tanggal:
             break
         try:
-            pd.to_datetime(tanggal)
-            df.at[index, "Tanggal"] = tanggal
+            df.at[index, "Tanggal"] = pd.to_datetime(tanggal, format='%Y-%m-%d')
             break
         except ValueError:
             print("Format tanggal salah. Gunakan format YYYY-MM-DD.")
@@ -293,10 +296,9 @@ def find():
             tanggalMulai = input("Masukkan tanggal awal (YYYY-MM-DD): ").strip()
             tanggalAkhir = input("Masukkan tanggal akhir (YYYY-MM-DD): ").strip()
             
-            tanggalMulai = pd.to_datetime(tanggalMulai)
-            tanggalAkhir = pd.to_datetime(tanggalAkhir)
+            tanggalMulai = pd.to_datetime(tanggalMulai, format='%Y-%m-%d')
+            tanggalAkhir = pd.to_datetime(tanggalAkhir, format='%Y-%m-%d')
             
-            df['Tanggal'] = pd.to_datetime(df['Tanggal'])
             result = df[(df['Tanggal'] >= tanggalMulai) & (df['Tanggal'] <= tanggalAkhir)]
         except ValueError:
             print("Format tanggal salah!")
@@ -383,4 +385,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
