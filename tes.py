@@ -103,6 +103,7 @@ def add():
     df = readData()
     
     while True:
+        dis(df)
         idBaru = input("Masukkan ID Sales: ").strip()
         if not idBaru:
             print("ID Sales tidak boleh kosong!")
@@ -165,6 +166,7 @@ def add():
     
     clear()
     print("Data berhasil ditambahkan!")
+    dis(df)
     input("\nTekan Enter untuk melanjutkan...")
     clear()
 
@@ -234,21 +236,18 @@ def update():
     
     idSales = input("Masukkan ID Sales yang ingin diubah: ").strip()
     
-    df_list = df.to_dict('records')
-    sorted_df = mergeSort(df_list, key='ID')
+    matching_rows = df[df['ID'].astype(str).str.strip() == str(idSales).strip()]
     
-    index_result = binarySearch(sorted_df, idSales)
-    
-    if index_result == -1:
+    if matching_rows.empty:
         print("ID tidak ditemukan!")
         input("\nTekan Enter untuk melanjutkan...")
         clear()
         return
     
-    index = df[df['ID'] == idSales].index[0]
+    index = matching_rows.index[0]
     
     print("\nData Saat Ini:")
-    dis(df.loc[df['ID'] == idSales])
+    dis(matching_rows)
     
     print("\nKosongkan input jika tidak ingin mengubah")
     
@@ -271,7 +270,7 @@ def update():
         if not total:
             break
         try:
-            totalTerjual = float(total)
+            totalTerjual = float(total.replace('Rp', '').replace(',', '').strip())
             if totalTerjual < 0:
                 print("Total terjual harus lebih dari 0!")
                 continue
@@ -298,6 +297,7 @@ def update():
     
     clear()
     print("Data berhasil diperbarui!")
+    dis(df)
     input("\nTekan Enter untuk melanjutkan...")
     clear()
 
@@ -307,13 +307,9 @@ def hapus():
     dis(df)
     
     idSales = input("Masukkan ID Sales yang ingin dihapus: ").strip()
+    matching_rows = df[df['ID'].astype(str).str.strip() == str(idSales).strip()]
     
-    df_list = df.to_dict('records')
-    sorted_df = mergeSort(df_list, key='ID')
-    
-    index_result = binarySearch(sorted_df, idSales)
-    
-    if index_result == -1:
+    if matching_rows.empty:
         print("ID tidak ditemukan!")
         input("\nTekan Enter untuk melanjutkan...")
         clear()
@@ -322,11 +318,12 @@ def hapus():
     konfirmasi = input(f"Anda yakin ingin menghapus data sales dengan ID {idSales}? (Y/N): ").lower()
     
     if konfirmasi == 'y':
-        df = df[df["ID"] != idSales]
+        df = df[df['ID'].astype(str).str.strip() != str(idSales).strip()]
         saveDF(df)
         
         clear()
         print("Data berhasil dihapus!")
+        dis(df)
     else:
         clear()
         print("Penghapusan dibatalkan.")
@@ -337,12 +334,15 @@ def hapus():
 def find():
     clear()
     df = readData()
+
+    dis(df)
     
     print("Cari berdasarkan:")
     print("1. ID Sales")
     print("2. Nama Sales")
     print("3. Rentang Tanggal")
     print("4. Rentang Total Terjual")
+    print("5. Rentang Jumlah Barang Terjual")
     print("0. Kembali")
     
     choice = input("Pilihan: ")
@@ -354,11 +354,14 @@ def find():
         idSales = input("Masukkan ID Sales: ").strip()
         
         df_list = df.to_dict('records')
-        sorted_df = mergeSort(df_list, key='ID')
+        sorted_df_list = mergeSort(df_list, key='ID')
         
-        index_result = binarySearch(sorted_df, idSales)
+        index_result = binarySearch(sorted_df_list, idSales)
         
-        result = df[df["ID"] == idSales] if index_result != -1 else pd.DataFrame()
+        if index_result != -1:
+            result = pd.DataFrame([sorted_df_list[index_result]])
+        else:
+            result = pd.DataFrame()
     
     elif choice == "2":
         nama = input("Masukkan Nama Sales: ").strip()
@@ -385,6 +388,21 @@ def find():
             maxTotal = float(input("Masukkan total maksimum: "))
             
             result = df[(df['Total Terjual'] >= minTotal) & (df['Total Terjual'] <= maxTotal)]
+        except ValueError:
+            print("Masukkan angka yang valid!")
+            input("\nTekan Enter untuk melanjutkan...")
+            clear()
+            return
+    
+    elif choice == "5":
+        try:
+            df_list = df.to_dict('records')
+            sorted_df_list = mergeSort(df_list, key='Jumlah Barang Terjual')
+            
+            minBarang = int(input("Masukkan jumlah barang minimum: "))
+            maxBarang = int(input("Masukkan jumlah barang maksimum: "))
+            
+            result = df[(df['Jumlah Barang Terjual'] >= minBarang) & (df['Jumlah Barang Terjual'] <= maxBarang)]
         except ValueError:
             print("Masukkan angka yang valid!")
             input("\nTekan Enter untuk melanjutkan...")
